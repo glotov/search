@@ -1,8 +1,9 @@
 const path = require('path');
+const glob = require('glob');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-// const StaticFilesWebpackPlugin = require('static-files-webpack-plugin');
-// const CopyPlugin = require('copy-webpack-plugin');
-const webpack = require('webpack');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const PurgeCSSPlugin = require('purgecss-webpack-plugin');
+
 const data = require('./data');
 
 module.exports = {
@@ -24,7 +25,13 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: path.resolve(__dirname, "src/templates/main.hbs"),
       templateParameters: data
-    })
+    }),
+    new MiniCssExtractPlugin({
+      filename: 'index.css',
+    }),
+    new PurgeCSSPlugin({
+      paths: glob.sync(`${path.join(__dirname, 'src')}/**/*`,  { nodir: true }),
+    }),
   ],
   resolve: {
     extensions: [".js", ".json", ".mjs"],
@@ -39,6 +46,7 @@ module.exports = {
     rules: [
       {
         test:  /\.js$/,
+        sideEffects: true,
         loader: 'babel-loader',
         exclude: /node_modules/,
       },
@@ -46,7 +54,7 @@ module.exports = {
         test: /\.(css|scss)$/,
         use: [
           {
-            loader: 'style-loader',
+            loader: MiniCssExtractPlugin.loader,
           },
           {
             loader: 'css-loader',
@@ -57,9 +65,16 @@ module.exports = {
         ]
       },
       {
-        test:  /\.(svg|ttf|png|jpg|woff|woff2|eot)$/,
+        test: /\.(jpg|png|gif|svg)$/,
+        loader: 'image-webpack-loader',
+        enforce: 'pre'
+      },
+      {
+        test: /\.(jpe?g|png|gif|woff|woff2)$/,
         loader: 'url-loader',
-        exclude: /node_modules/,
+        options: {
+          limit: 10 * 1024
+        }
       },
       {
         test:  /\.hbs$/,
